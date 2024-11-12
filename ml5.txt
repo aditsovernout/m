@@ -1,0 +1,90 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
+from sklearn.metrics import precision_score
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import recall_score
+
+df=pd.read_csv('diabetes.csv')
+
+df_x=df
+df_y=df['Outcome']
+df_y
+
+def RemoveOutliers(df,var):
+ Q1 = df[var].quantile(0.25)
+ Q3 = df[var].quantile(0.75)
+
+ IQR = Q3 - Q1
+ high, low = Q3+1.5*IQR, Q1-1.5*IQR
+ print("Highest allowed in variable:", var, high)
+ print("lowest allowed in variable:", var, low)
+ 
+ count = df[(df[var] > high) | (df[var] < low)][var].count()
+ print('Total outliers in:',var,':',count)
+ df = df[((df[var] >= low) & (df[var] <= high))]
+ return df
+
+
+fig,axes=plt.subplots(1,3)
+
+sns.boxplot(data=df,x='Insulin',ax=axes[0])
+sns.boxplot(data=df,x='Pedigree',ax=axes[1])
+sns.boxplot(data=df,x='Glucose',ax=axes[2])
+plt.show()
+
+df=RemoveOutliers(df,'Insulin')
+df=RemoveOutliers(df,'Pedigree')
+
+
+
+fig,axes=plt.subplots(1,3)
+
+sns.boxplot(data=df,x='Insulin',ax=axes[0])
+sns.boxplot(data=df,x='Pedigree',ax=axes[1])
+sns.boxplot(data=df,x='Glucose',ax=axes[2])
+plt.show()
+
+
+xtrain,xtest,ytrain,ytest=train_test_split(df_x,df_y,test_size=0.20,random_state=13)
+
+from sklearn.preprocessing import StandardScaler
+sc=StandardScaler()
+xtrain=sc.fit_transform(xtrain)
+xtest=sc.transform(xtest)
+
+knn = KNeighborsClassifier(n_neighbors=5) 
+knn.fit(xtrain,ytrain)
+ypred=knn.predict(xtest)
+
+cm=confusion_matrix(ytest,ypred)
+sns.heatmap(cm,annot=True)
+plt.show()
+print(classification_report(ytest,ypred))
+
+accuracy = accuracy_score(ytest, ypred) 
+precision = precision_score(ytest, ypred) 
+recall = recall_score(ytest, ypred) 
+error_rate = 1 - accuracy 
+
+print(f"Accuracy: {accuracy * 100:.2f}%") 
+print(f"Error Rate: {error_rate * 100:.2f}%") 
+print(f"Precision: {precision * 100:.2f}%") 
+print(f"Recall: {recall * 100:.2f}%") 
+
+#Loop through different values of K to check the impact of k on accuracy 
+
+print("\nEvaluating different values of k for better performance:") 
+for k in range(1, 11): 
+    knn = KNeighborsClassifier(n_neighbors=k) 
+    knn.fit(xtrain, ytrain) 
+    ypred = knn.predict(xtest) 
+    accuracy = accuracy_score(ytest, ypred) 
+    print(f"K = {k}, Accuracy = {accuracy * 100:.2f}%") 
+
+ 
